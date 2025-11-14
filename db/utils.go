@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-func ConnectDB() (*mongo.Client, error) {
+func Connect() (*mongo.Client, error) {
 	uri := os.Getenv("MONGODB_URI")
 
 	if uri == "" {
@@ -19,5 +19,11 @@ func ConnectDB() (*mongo.Client, error) {
 
 	clientOptions := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 
-	return mongo.Connect(clientOptions)
+	client, err := mongo.Connect(clientOptions)
+
+	if err != nil {
+		log.Fatal("Connection to MongoDB failed:", err)
+	}
+
+	return client, nil
 }

@@ -17,13 +17,12 @@ func main() {
 	}
 
 	/* DATABASE CONNECTION  */
-
-	db.ConnectDB()
+	client, err := db.Connect()
 
 	if err != nil {
 		panic(err)
 	}
 
 	/* ROUTING  */
-	routes.Routes()
+	routes.NewServer(client)
 }
