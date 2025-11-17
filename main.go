@@ -4,7 +4,9 @@ import (
 	"ai-assistant/boargames/db"
 	"ai-assistant/boargames/routes"
 	"fmt"
+	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -23,6 +25,14 @@ func main() {
 		panic(err)
 	}
 
+	router := chi.NewRouter()
+	apiRouter := chi.NewRouter()
+
+	router.Mount("/api/v1", apiRouter)
+
 	/* ROUTING  */
-	routes.NewServer(client)
+	server := routes.NewServer(client, apiRouter)
+	server.HandleSignup()
+
+	http.ListenAndServe(":8080", router)
 }

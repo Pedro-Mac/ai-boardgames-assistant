@@ -2,6 +2,8 @@ package routes
 
 import (
 	"ai-assistant/boargames/internal/auth"
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,33 +15,49 @@ type Server struct {
 	Router         *chi.Mux
 }
 
-func NewServer(dbClient *mongo.Client) *Server {
-	router := chi.NewRouter()
+func NewServer(dbClient *mongo.Client, router *chi.Mux) *Server {
 
 	server := &Server{
 		DatabaseClient: dbClient,
 		Router:         router,
 	}
 
-	server.setupRouting()
-
 	return server
 }
 
-const API_BASE_PATH = "/api"
+type SignupRequestBody struct {
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
 
-func (server *Server) setupRouting() {
-	apiRouter := chi.NewRouter()
-	server.Router.Mount(API_BASE_PATH, apiRouter)
+func (server *Server) HandleSignup() {
+	server.Router.Post("/auth/signup", func(w http.ResponseWriter, r *http.Request) {
+		var reqBody SignupRequestBody
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
 
-	apiRouter.Group(func(r chi.Router) {
-		r.Get("/auth/me", func(w http.ResponseWriter, r *http.Request) {
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Invalid request body",
+			})
+			return
+		}
+
+		authRepo := auth.NewAuthRepository(server.DatabaseClient, "ai-boardgame-assistant", "auth")
+		result, err := authRepo.CreateUser(reqBody.Email, reqBody.Password)
+
+		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "Authenticated user info"}`))
-		})
-		r.Post("/auth/login", auth.HandleLogin)
-	})
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
 
-	http.ListenAndServe(":3000", server.Router)
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": fmt.Sprintf("Inserted document with _id: %v\n", result.InsertedID),
+		})
+	})
 }
