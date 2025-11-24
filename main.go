@@ -32,7 +32,7 @@ func main() {
 
 	/* ROUTING  */
 	server := routes.NewServer(client, apiRouter)
-	server.HandleSignup()
+	server.RegisterAllRoutes()
 
 	http.ListenAndServe(":8080", router)
 }

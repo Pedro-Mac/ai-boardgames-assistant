@@ -21,7 +21,7 @@ func NewAuthRepository(client *mongo.Client, database string, collection string)
 }
 
 func (repo *AuthRepository) CreateUser(email string, password string) (*mongo.InsertOneResult, error) {
-	authDoc := SingupBody{
+	authDoc := SignupRequestBody{
 		Email:    email,
 		Password: password,
 	}
