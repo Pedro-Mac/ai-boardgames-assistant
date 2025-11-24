@@ -17,5 +17,5 @@ func RegisterRoutes(server ServerDependencies) {
 	dbClient := server.GetDatabaseClient()
 
 	router.Post("/auth/signup", HandleSignup(dbClient))
-	router.Post("/auth/login", HandleLogin)
+	router.Post("/auth/login", HandleLogin(dbClient))
 }
