@@ -31,11 +31,11 @@ func (repo *AuthRepository) CreateUser(email string, password string) (*mongo.In
 	return repo.client.Database(repo.database).Collection(repo.collection).InsertOne(context.TODO(), authDoc)
 }
 
-func (repo *AuthRepository) FindUserByCredentials(email string, password string) (Credentials, error) {
+func (repo *AuthRepository) FindUserByEmail(email string) (Credentials, error) {
 
 	var credentials Credentials
 
-	credentialsFilter := bson.D{{Key: "email", Value: email}, {Key: "password", Value: password}}
+	credentialsFilter := bson.D{{Key: "email", Value: email}}
 
 	err := repo.client.Database(repo.database).Collection(repo.collection).FindOne(context.TODO(), credentialsFilter).Decode(&credentials)
 
@@ -49,6 +49,5 @@ func (repo *AuthRepository) FindUserByCredentials(email string, password string)
 		return Credentials{}, err
 	}
 
-	fmt.Println(credentials.Email, credentials.Password)
 	return credentials, nil
 }

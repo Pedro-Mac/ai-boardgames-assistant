@@ -25,7 +25,7 @@ func HandleSignup(dbClient *mongo.Client) http.HandlerFunc {
 
 		authRepo := NewAuthRepository(dbClient, "ai-boardgame-assistant", "auth")
 
-		passwordHash, err := hashPassword(reqBody.Password)
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), bcrypt.DefaultCost)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -35,7 +35,7 @@ func HandleSignup(dbClient *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		result, err := authRepo.CreateUser(reqBody.Email, passwordHash)
+		result, err := authRepo.CreateUser(reqBody.Email, string(passwordHash))
 
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -70,14 +70,29 @@ func HandleLogin(dbClient *mongo.Client) http.HandlerFunc {
 
 		authRepo := NewAuthRepository(dbClient, "ai-boardgame-assistant", "auth")
 
-		authRepo.FindUserByCredentials(reqBody.Email, reqBody.Password)
-	}
-}
+		credentials, err := authRepo.FindUserByEmail(reqBody.Email)
 
-func hashPassword(password string) (string, error) {
-	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Invalid email or password",
+			})
+			return
+		}
+
+		err = bcrypt.CompareHashAndPassword([]byte(credentials.Password), []byte(reqBody.Password))
+
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Invalid email or password",
+			})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Login successful",
+		})
 	}
-	return string(hashedBytes), nil
 }
