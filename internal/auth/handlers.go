@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
@@ -22,11 +24,22 @@ func HandleSignup(dbClient *mongo.Client) http.HandlerFunc {
 		}
 
 		authRepo := NewAuthRepository(dbClient, "ai-boardgame-assistant", "auth")
-		result, err := authRepo.CreateUser(reqBody.Email, reqBody.Password)
+
+		passwordHash, err := hashPassword(reqBody.Password)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Failed signup user",
+			})
+			return
+		}
+
+		result, err := authRepo.CreateUser(reqBody.Email, passwordHash)
 
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{
 				"error": err.Error(),
 			})
@@ -59,4 +72,12 @@ func HandleLogin(dbClient *mongo.Client) http.HandlerFunc {
 
 		authRepo.FindUserByCredentials(reqBody.Email, reqBody.Password)
 	}
+}
+
+func hashPassword(password string) (string, error) {
+	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedBytes), nil
 }
