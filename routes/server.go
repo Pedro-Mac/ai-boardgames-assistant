@@ -2,6 +2,7 @@ package routes
 
 import (
 	"ai-assistant/boargames/internal/auth"
+	"ai-assistant/boargames/internal/boardgames"
 
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -31,4 +32,5 @@ func (s *Server) GetRouter() *chi.Mux {
 
 func (server *Server) RegisterAllRoutes() {
 	auth.RegisterRoutes(server)
+	boardgames.RegisterRoutes(server)
 }
