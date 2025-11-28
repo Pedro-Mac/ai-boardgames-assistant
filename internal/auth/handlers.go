@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -90,9 +91,20 @@ func HandleLogin(dbClient *mongo.Client) http.HandlerFunc {
 			return
 		}
 
+		token, err := CreateJWT([]byte(os.Getenv("JWT_SECRET")), credentials.UserID, credentials.Email)
+
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Invalid email or password",
+			})
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{
 			"message": "Login successful",
+			"token":   token,
 		})
 	}
 }

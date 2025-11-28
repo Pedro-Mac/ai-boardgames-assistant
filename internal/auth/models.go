@@ -13,4 +13,5 @@ type LoginRequestBody struct {
 type Credentials struct {
 	Email    string `bson:"email"`
 	Password string `bson:"password"`
+	UserID   string `bson:"user_id"`
 }
