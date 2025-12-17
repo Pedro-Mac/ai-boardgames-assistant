@@ -1,6 +1,7 @@
 package boardgames
 
 import (
+	"ai-assistant/boargames/utils"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -81,6 +82,13 @@ func handleRulesUploadFile(dbClient *mongo.Client) http.HandlerFunc {
 		result, err := gamesCollection.InsertOne(r.Context(), game)
 		if err != nil {
 			http.Error(w, "Error saving game", http.StatusInternalServerError)
+			return
+		}
+
+		err = utils.ExtractPdfContent(&file)
+
+		if err != nil {
+			http.Error(w, "Error extracting PDF content", http.StatusInternalServerError)
 			return
 		}
 
