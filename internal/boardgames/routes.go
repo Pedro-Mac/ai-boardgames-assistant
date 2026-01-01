@@ -3,6 +3,7 @@ package boardgames
 import (
 	"ai-assistant/boargames/utils"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -54,15 +55,21 @@ func handleRulesUploadFile(dbClient *mongo.Client) http.HandlerFunc {
 		db := dbClient.Database("boardgames")
 		bucket := db.GridFSBucket()
 
+		fileBytes, err := io.ReadAll(file)
+		if err != nil {
+			http.Error(w, "Error reading file", http.StatusBadRequest)
+			return
+		}
+
 		uploadStream, err := bucket.OpenUploadStream(r.Context(), name)
 		if err != nil {
 			http.Error(w, "Error opening upload stream", http.StatusInternalServerError)
 			return
 		}
+
 		defer uploadStream.Close()
 
-		// Copy file to GridFS
-		_, err = io.Copy(uploadStream, file)
+		_, err = uploadStream.Write(fileBytes)
 		if err != nil {
 			http.Error(w, "Error uploading file", http.StatusInternalServerError)
 			return
@@ -85,7 +92,10 @@ func handleRulesUploadFile(dbClient *mongo.Client) http.HandlerFunc {
 			return
 		}
 
-		err = utils.ExtractPdfContent(&file)
+		text, err := utils.ExtractPdfContent(fileBytes)
+
+		fmt.Println(text)
+		fmt.Println(err)
 
 		if err != nil {
 			http.Error(w, "Error extracting PDF content", http.StatusInternalServerError)

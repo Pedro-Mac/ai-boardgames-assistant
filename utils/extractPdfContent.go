@@ -2,25 +2,40 @@ package utils
 
 import (
 	"bytes"
-	"io"
-	"mime/multipart"
+	"fmt"
+	"strings"
 
 	"github.com/ledongthuc/pdf"
 )
 
-func ExtractPdfContent(file *multipart.File) error {
+func ExtractPdfContent(fileBytes []byte) (string, error) {
 	// Placeholder for PDF content extraction logic
-
-	fileBytes, err := io.ReadAll(*file)
-	if err != nil {
-		return err
-	}
 
 	reader := bytes.NewReader(fileBytes)
 
 	pdfReader, err := pdf.NewReader(reader, int64(len(fileBytes)))
 
 	if err != nil {
-		return err
+		fmt.Printf("failed to open PDF: %v\n", err)
+		return "", fmt.Errorf("failed to open PDF: %w", err)
 	}
+
+	var textBuilder strings.Builder
+	numPages := pdfReader.NumPage()
+	for i := 1; i <= numPages; i++ {
+		page := pdfReader.Page(i)
+		if page.V.IsNull() {
+			continue
+		}
+		pageText, err := page.GetPlainText(nil)
+		if err != nil {
+			fmt.Printf("failed to extract text from page %d: %v\n", i, err)
+			continue
+		}
+
+		textBuilder.WriteString(pageText)
+		textBuilder.WriteString("\n\n")
+	}
+
+	return textBuilder.String(), nil
 }
