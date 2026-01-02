@@ -20,6 +20,8 @@ func main() {
 
 	/* DATABASE CONNECTION  */
 	client, err := db.Connect()
+	/* Initialize OpenAI client */
+	// openAiClient := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
 	if err != nil {
 		panic(err)
