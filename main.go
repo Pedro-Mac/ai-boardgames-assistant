@@ -3,11 +3,14 @@ package main
 import (
 	"ai-assistant/boargames/db"
 	"ai-assistant/boargames/routes"
+	"ai-assistant/boargames/services"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
+	"github.com/sashabaranov/go-openai"
 )
 
 func main() {
@@ -21,7 +24,9 @@ func main() {
 	/* DATABASE CONNECTION  */
 	client, err := db.Connect()
 	/* Initialize OpenAI client */
-	// openAiClient := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+	openAiClient := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+
+	embeddingService := services.NewEmbeddingService(openAiClient)
 
 	if err != nil {
 		panic(err)
@@ -33,7 +38,7 @@ func main() {
 	router.Mount("/api/v1", apiRouter)
 
 	/* ROUTING  */
-	server := routes.NewServer(client, apiRouter)
+	server := routes.NewServer(client, apiRouter, embeddingService)
 	server.RegisterAllRoutes()
 
 	http.ListenAndServe(":8080", router)

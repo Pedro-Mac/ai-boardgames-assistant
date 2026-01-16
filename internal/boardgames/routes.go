@@ -1,6 +1,7 @@
 package boardgames
 
 import (
+	"ai-assistant/boargames/services"
 	"ai-assistant/boargames/utils"
 	"encoding/json"
 	"fmt"
@@ -16,16 +17,18 @@ import (
 type ServerDependencies interface {
 	GetDatabaseClient() *mongo.Client
 	GetRouter() *chi.Mux
+	GetEmbeddingService() *services.EmbeddingService
 }
 
 func RegisterRoutes(server ServerDependencies) {
 	router := server.GetRouter()
 	dbClient := server.GetDatabaseClient()
+	embeddingService := server.GetEmbeddingService()
 
-	router.Post("/boardgames/game-upload", handleRulesUploadFile(dbClient))
+	router.Post("/boardgames/game-upload", handleRulesUploadFile(dbClient, embeddingService))
 }
 
-func handleRulesUploadFile(dbClient *mongo.Client) http.HandlerFunc {
+func handleRulesUploadFile(dbClient *mongo.Client, embeddingService *services.EmbeddingService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Handler logic goes here
 
@@ -99,6 +102,13 @@ func handleRulesUploadFile(dbClient *mongo.Client) http.HandlerFunc {
 
 		if err != nil {
 			http.Error(w, "Error extracting PDF content", http.StatusInternalServerError)
+			return
+		}
+
+		embedding, err := embeddingService.GetEmbedding(r.Context(), text)
+
+		if err != nil {
+			http.Error(w, "Error generating embedding", http.StatusInternalServerError)
 			return
 		}
 

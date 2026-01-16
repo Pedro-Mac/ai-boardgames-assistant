@@ -11,6 +11,10 @@ import (
 func ExtractPdfContent(fileBytes []byte) (string, error) {
 	// Placeholder for PDF content extraction logic
 
+	if fileBytes == nil {
+		return "", fmt.Errorf("fileBytes is nil")
+	}
+
 	reader := bytes.NewReader(fileBytes)
 
 	pdfReader, err := pdf.NewReader(reader, int64(len(fileBytes)))
@@ -37,5 +41,11 @@ func ExtractPdfContent(fileBytes []byte) (string, error) {
 		textBuilder.WriteString("\n\n")
 	}
 
-	return textBuilder.String(), nil
+	text := textBuilder.String()
+
+	if text == "" {
+		return "", fmt.Errorf("no text extracted from PDF")
+	}
+
+	return text, nil
 }
